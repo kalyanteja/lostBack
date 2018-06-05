@@ -1,0 +1,9 @@
+{
+  "name": "lostBack",
+  "version": "1.0.0",
+  "dependencies": {
+    "mssql": "~4.1.0",
+    "msnodesqlv8": "~0.6",
+    "express": "~4.16"
+  }
+}
