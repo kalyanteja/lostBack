@@ -2,8 +2,9 @@
   "name": "lostBack",
   "version": "1.0.0",
   "dependencies": {
-    "mssql": "~4.1.0",
+    "body-parser": "^1.18.3",
+    "express": "~4.16",
     "msnodesqlv8": "~0.6",
-    "express": "~4.16"
+    "mssql": "~4.1.0"
   }
 }

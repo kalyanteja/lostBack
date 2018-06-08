@@ -1,8 +1,16 @@
 const sql = require('mssql/msnodesqlv8')
 const express = require('express')
+const bodyParser = require('body-parser')
+
 const connectionString = "server=.\\MSSQL2014;Database=LostIdentity;Trusted_Connection=Yes;Driver={SQL Server Native Client 11.0}";
 
 const app = express();
+
+// parse application/x-www-form-urlencoded
+app.use(bodyParser.urlencoded({ extended: false }))
+// parse application/json
+app.use(bodyParser.json())
+
 const connection = new sql.ConnectionPool(connectionString);
 const dbRequest = new sql.Request(connection);
 
@@ -48,6 +56,28 @@ app.get('/lostDocuments', function(req, resp){
     });
 });
 
+app.get('/documentTypes', function(req, resp){
+    connection.connect(function(err) {
+        if (!!err){
+            console.log('Error in conn' + err);
+        } else {
+            console.log('connected');
+        }
+
+        const getAllDocTypes = "SELECT [Id], [Name] FROM [DocumentType]";
+
+        dbRequest.query(getAllDocTypes, function(err, records){
+            if (!!err){
+                console.log('Error in query' + err);
+                resp.send("oops...!");
+            } else {
+                resp.send(records.recordset);
+            }
+            connection.close();
+        });
+    });
+});
+
 app.get('/lostDocuments/:id', function(req, resp){
     
     console.log('id is......' + req.params.id);
@@ -67,6 +97,55 @@ app.get('/lostDocuments/:id', function(req, resp){
                 resp.send("oops...!");
             } else {
                 resp.send(records.recordset[0]);
+            }
+            connection.close();
+        });
+    });
+});
+
+app.post('/createDocument', function(req, resp){
+    
+    console.log(req.body);
+    const document = req.body;
+
+    connection.connect(function(err) {
+        if (!!err){
+            console.log('Error in conn' + err);
+        } else {
+            console.log('connected');
+        }
+
+        const addDocumentQuery = `INSERT INTO [dbo].[LostDocument]
+        ([DocumentNumber]
+        ,[GivenName]
+        ,[ValidityDate]
+        ,[IssuedOn]
+        ,[Address]
+        ,[Sex]
+        ,[DateOfBirth]
+        ,[FoundLocality]
+        ,[LostDocumentType_Id]
+        ,[Country])
+  VALUES
+        ('${document.documentNumber}'
+        ,'${document.givenName}'
+        ,${document.validityDate ? document.validityDate : null}
+        ,${document.issuedOn ? document.issuedOn : null}
+        ,'${document.address}'
+        ,'${document.sex}'
+        ,${document.dateOfBirth ? document.dateOfBirth : null}
+        ,'${document.foundLocality}'
+        ,${document.documentType}
+        ,'${document.country}')`
+
+        console.log("Insert query..." + addDocumentQuery);
+
+        dbRequest.query((addDocumentQuery), function(err, records){
+            if (!!err){
+                console.log('Error in query' + err);
+                resp.send("oops...insert failed!");
+            } else {
+                resp.send({message: "Identity logged!"});
             }
             connection.close();
         });
