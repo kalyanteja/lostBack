@@ -33,7 +33,7 @@ app.use(function (req, res, next) {
     next();
 });
 
-// Get all users
+// Get all logged lost documents
 app.get('/lostDocuments', function(req, resp){
     connection.connect(function(err) {
         if (!!err){
@@ -56,6 +56,7 @@ app.get('/lostDocuments', function(req, resp){
     });
 });
 
+// get list of document types eg: Passport, PAN etc.
 app.get('/documentTypes', function(req, resp){
     connection.connect(function(err) {
         if (!!err){
@@ -78,6 +79,7 @@ app.get('/documentTypes', function(req, resp){
     });
 });
 
+//get document by Id
 app.get('/lostDocuments/:id', function(req, resp){
     
     console.log('id is......' + req.params.id);
@@ -103,6 +105,52 @@ app.get('/lostDocuments/:id', function(req, resp){
     });
 });
 
+function addFilterToSearch(columnName, columnValue){
+    if (columnValue != null && columnValue != ""){
+        return `AND ${columnName} like '%${columnValue}%'`;
+    }else{
+        return "AND 1=1";
+    }
+}
+
+//search documents
+app.get('/searchDocuments/', function(req, resp){
+    
+    console.log('params are.....');
+    console.log(req.query);
+    const docNumber = req.query.docNumber;
+    const docTypeId = req.query.docType;
+    const givenName = req.query.givenName;
+    const country = req.query.country;
+
+    connection.connect(function(err) {
+        if (!!err){
+            console.log('Error in searching...' + err);
+        } else {
+            console.log('connected');
+        }
+
+        const searchQuery = `SELECT *, ld.Id as DocId, dt.Name as DocumentTypeName FROM [LostDocument] ld join DocumentType dt on dt.Id = ld.LostDocumentType_Id
+        WHERE ld.LostDocumentType_Id = ${docTypeId}
+        ${addFilterToSearch('DocumentNumber', docNumber)}
+        ${addFilterToSearch('GivenName', givenName)}
+        ${addFilterToSearch('Country', country)}`;
+    
+        console.log("returnIdQuery query..." + searchQuery);
+
+        dbRequest.query((searchQuery), function(err, records){
+            if (!!err){
+                console.log('Error in query' + err);
+                resp.send("oops...!");
+            } else {
+                resp.send(records.recordset);
+            }
+            connection.close();
+        });
+    });
+});
+
+// insert document details and return the inserted Id
 app.post('/createDocument', function(req, resp){
     
     console.log(req.body);
@@ -129,14 +177,15 @@ app.post('/createDocument', function(req, resp){
   VALUES
         ('${document.documentNumber}'
         ,'${document.givenName}'
-        ,${document.validityDate ? document.validityDate : null}
-        ,${document.issuedOn ? document.issuedOn : null}
+        , ${document.validityDate ? covertToDateFormat(document.validityDate) : null}
+        , ${document.issuedOn ? covertToDateFormat(document.issuedOn) : null}
         ,'${document.address}'
         ,'${document.sex}'
-        ,${document.dateOfBirth ? document.dateOfBirth : null}
+        , ${document.dateOfBirth ? covertToDateFormat(document.dateOfBirth) : null}
         ,'${document.foundLocality}'
-        ,${document.documentType}
-        ,'${document.country}')`
+        , ${document.documentType}
+        ,'${document.country}');
+        SELECT SCOPE_IDENTITY() AS id`;
 
         console.log("Insert query..." + addDocumentQuery);
 
@@ -145,7 +194,9 @@ app.post('/createDocument', function(req, resp){
                 console.log('Error in query' + err);
                 resp.send("oops...insert failed!");
             } else {
-                resp.send({message: "Identity logged!"});
+                console.log('records.insertId query...####');
+                console.log(records);
+                resp.send(records.recordset);
             }
             connection.close();
         });
@@ -153,3 +204,7 @@ app.post('/createDocument', function(req, resp){
 });
 
 app.listen(3000);
+
+function covertToDateFormat(dateField) {
+    return `'${dateField}'`;
+};
