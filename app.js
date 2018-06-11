@@ -14,6 +14,8 @@ app.use(bodyParser.json())
 const connection = new sql.ConnectionPool(connectionString);
 const dbRequest = new sql.Request(connection);
 
+app.listen(3000);
+
 app.use(function (req, res, next) {
 
     // Website you wish to allow to connect
@@ -31,6 +33,32 @@ app.use(function (req, res, next) {
 
     // Pass to next layer of middleware
     next();
+});
+
+//Get SUMMARY
+app.get('/summary', function(req, resp){
+    connection.connect(function(err) {
+        if (!!err){
+            console.log('Error in summary' + err);
+        } else {
+            console.log('connected');
+        }
+
+        const summaryQuery = `Select Count(*) as TotalRecords  from LostDocument;
+        Select Count(Distinct(country)) as TotalCountries from LostDocument;
+        Select Count(*) as TotalDocumentTypes FROM DocumentType;`;
+
+        dbRequest.query(summaryQuery, function(err, records){
+            if (!!err){
+                console.log('Error in query' + err);
+                resp.send("oops...!");
+            } else {
+                console.log(records.recordsets);
+                resp.send(records.recordsets);
+            }
+            connection.close();
+        });
+    });
 });
 
 // Get all logged lost documents
@@ -105,14 +133,6 @@ app.get('/lostDocuments/:id', function(req, resp){
     });
 });
 
-function addFilterToSearch(columnName, columnValue){
-    if (columnValue != null && columnValue != ""){
-        return `AND ${columnName} like '%${columnValue}%'`;
-    }else{
-        return "AND 1=1";
-    }
-}
-
 //search documents
 app.get('/searchDocuments/', function(req, resp){
     
@@ -173,7 +193,8 @@ app.post('/createDocument', function(req, resp){
         ,[DateOfBirth]
         ,[FoundLocality]
         ,[LostDocumentType_Id]
-        ,[Country])
+        ,[Country]
+        ,[CreatedDate])
   VALUES
         ('${document.documentNumber}'
         ,'${document.givenName}'
@@ -184,7 +205,8 @@ app.post('/createDocument', function(req, resp){
         , ${document.dateOfBirth ? covertToDateFormat(document.dateOfBirth) : null}
         ,'${document.foundLocality}'
         , ${document.documentType}
-        ,'${document.country}');
+        ,'${document.country}'
+        , GETDATE());
         SELECT SCOPE_IDENTITY() AS id`;
 
         console.log("Insert query..." + addDocumentQuery);
@@ -203,8 +225,14 @@ app.post('/createDocument', function(req, resp){
     });
 });
 
-app.listen(3000);
-
 function covertToDateFormat(dateField) {
     return `'${dateField}'`;
-};
+}
+
+function addFilterToSearch(columnName, columnValue){
+    if (columnValue != null && columnValue != ""){
+        return `AND ${columnName} like '%${columnValue}%'`;
+    }else{
+        return "AND 1=1";
+    }
+}
