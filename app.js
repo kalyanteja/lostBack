@@ -150,11 +150,13 @@ app.get('/searchDocuments/', function(req, resp){
             console.log('connected');
         }
 
+        console.log(`${docTypeId}....${docNumber}....${givenName}.....${country}....`);
+
         const searchQuery = `SELECT *, ld.Id as DocId, dt.Name as DocumentTypeName FROM [LostDocument] ld join DocumentType dt on dt.Id = ld.LostDocumentType_Id
         WHERE ld.LostDocumentType_Id = ${docTypeId}
-        ${addFilterToSearch('DocumentNumber', docNumber)}
-        ${addFilterToSearch('GivenName', givenName)}
-        ${addFilterToSearch('Country', country)}`;
+        ${addFilterToSearch('DocumentNumber', docNumber, docTypeId != null)}
+        ${addFilterToSearch('GivenName', givenName, docTypeId != null && docNumber != null)}
+        ${addFilterToSearch('Country', country, docTypeId != null && docNumber != null && givenName != null)}`;
     
         console.log("returnIdQuery query..." + searchQuery);
 
@@ -229,10 +231,11 @@ function covertToDateFormat(dateField) {
     return `'${dateField}'`;
 }
 
-function addFilterToSearch(columnName, columnValue){
+function addFilterToSearch(columnName, columnValue, prependAnd){
+    const andFilter = prependAnd ? 'AND' : "";
     if (columnValue != null && columnValue != ""){
-        return `AND ${columnName} like '%${columnValue}%'`;
+        return `${andFilter} ${columnName} like '%${columnValue}%'`;
     }else{
-        return "AND 1=1";
+        return `${andFilter} 1=1`;
     }
 }
