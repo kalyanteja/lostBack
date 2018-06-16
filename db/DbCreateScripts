@@ -26,4 +26,20 @@ GO
 SET ANSI_PADDING OFF
 GO
 
+------------------------------
+USE [LostIdentity]
+GO
 
+INSERT INTO [dbo].[DocumentType]
+           ([Id]
+           ,[Name])
+     VALUES
+(1,	'Passport')	
+(2,	'Aadhaar')	
+(3,	'PAN')	
+(4,	'Driver''s license')	
+(5,	'Voter Id')	
+(6,	'Social Security')	
+(7,	'Student Identification')
+
+GO
