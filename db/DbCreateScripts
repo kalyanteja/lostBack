@@ -34,12 +34,61 @@ INSERT INTO [dbo].[DocumentType]
            ([Id]
            ,[Name])
      VALUES
-(1,	'Passport')	
-(2,	'Aadhaar')	
-(3,	'PAN')	
-(4,	'Driver''s license')	
-(5,	'Voter Id')	
-(6,	'Social Security')	
+(1,	'Passport'),	
+(2,	'Aadhaar'),	
+(3,	'PAN')	,
+(4,	'Driver''s license'),	
+(5,	'Voter Id'),	
+(6,	'Social Security'),	
 (7,	'Student Identification')
 
 GO
+
+---------------------------------
+
+USE [LostIdentity]
+GO
+
+/****** Object:  Table [dbo].[LostDocument]    Script Date: 16/06/2018 5:44:03 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+SET ANSI_PADDING ON
+GO
+
+CREATE TABLE [dbo].[LostDocument](
+	[DocumentNumber] [varchar](250) NOT NULL,
+	[GivenName] [varchar](500) NOT NULL,
+	[ValidityDate] [date] NULL,
+	[IssuedOn] [date] NULL,
+	[Address] [varchar](1000) NULL,
+	[Sex] [varchar](20) NULL,
+	[DateOfBirth] [date] NULL,
+	[FoundLocality] [varchar](500) NULL,
+	[LostDocumentType_Id] [int] NOT NULL DEFAULT ((0)),
+	[Id] [int] IDENTITY(1,1) NOT NULL,
+	[Country] [varchar](500) NULL,
+	[CreatedDate] [datetime] NOT NULL DEFAULT (getdate()),
+ CONSTRAINT [PK_LostDocument] PRIMARY KEY CLUSTERED 
+(
+	[Id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+
+SET ANSI_PADDING OFF
+GO
+
+ALTER TABLE [dbo].[LostDocument]  WITH CHECK ADD  CONSTRAINT [fk_LostDocumentType_Id] FOREIGN KEY([LostDocumentType_Id])
+REFERENCES [dbo].[DocumentType] ([Id])
+GO
+
+ALTER TABLE [dbo].[LostDocument] CHECK CONSTRAINT [fk_LostDocumentType_Id]
+GO
+
+
+-------------------------
