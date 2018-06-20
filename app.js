@@ -1,19 +1,35 @@
-const sql = require('mssql/msnodesqlv8')
+//const sql = require('mssql/msnodesqlv8')
+const sql = require("mssql")
 const express = require('express')
 const bodyParser = require('body-parser')
 
-const connectionString = "server=.\\MSSQL2014;Database=LostIdentity;Trusted_Connection=Yes;Driver={SQL Server Native Client 11.0}";
+//const connectionString = "server=.\\MSSQL2014;Database=LostIdentity;Trusted_Connection=Yes;Driver={SQL Server Native Client 11.0}";
+
+// config for your database
+var config = {
+    user: 'user',
+    password: 'pass',
+    server: 'lost-my-id.ckr8aigjqmrn.ap-southeast-2.rds.amazonaws.com', 
+    database: 'LostIdentity' ,
+    options: {
+        encrypt: false,
+    }
+};
 
 const app = express();
+
+//Connection pool
+const connection = new sql.ConnectionPool(config)
+
+// create Request object
+const dbRequest = new sql.Request(connection);
 
 // parse application/x-www-form-urlencoded
 app.use(bodyParser.urlencoded({ extended: false }))
 // parse application/json
 app.use(bodyParser.json())
 
-const connection = new sql.ConnectionPool(connectionString);
-const dbRequest = new sql.Request(connection);
-
+//host on the port below
 app.listen(3000);
 
 app.use(function (req, res, next) {
@@ -37,7 +53,10 @@ app.use(function (req, res, next) {
 
 //Get SUMMARY
 app.get('/summary', function(req, resp){
-    connection.connect(function(err) {
+
+    // connect to your database
+    connection.connect(function (err) {
+        
         if (!!err){
             console.log('Error in summary' + err);
         } else {
@@ -47,7 +66,8 @@ app.get('/summary', function(req, resp){
         const summaryQuery = `Select Count(*) as TotalRecords  from LostDocument;
         Select Count(Distinct(country)) as TotalCountries from LostDocument;
         Select Count(*) as TotalDocumentTypes FROM DocumentType;`;
-
+        
+        // query to the database and get the records
         dbRequest.query(summaryQuery, function(err, records){
             if (!!err){
                 console.log('Error in query' + err);
