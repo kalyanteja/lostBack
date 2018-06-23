@@ -216,6 +216,7 @@ app.post('/createDocument', function(req, resp){
         ,[FoundLocality]
         ,[LostDocumentType_Id]
         ,[Country]
+        ,[SubmitterEmail]
         ,[CreatedDate])
   VALUES
         ('${document.documentNumber}'
@@ -228,6 +229,7 @@ app.post('/createDocument', function(req, resp){
         ,'${document.foundLocality}'
         , ${document.documentType}
         ,'${document.country}'
+        ,'${document.submitterEmail}'
         , GETDATE());
         SELECT SCOPE_IDENTITY() AS id`;
 
