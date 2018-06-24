@@ -9,7 +9,7 @@ const bodyParser = require('body-parser')
 var config = {
     user: 'user',
     password: 'pass',
-    server: 'lost-my-id.ckr8aigjqmrn.ap-southeast-2.rds.amazonaws.com', 
+    server: 'lostmy-id.cgve6prjmy8d.ap-southeast-1.rds.amazonaws.com', //singapore aws rds
     database: 'LostIdentity' ,
     options: {
         encrypt: false,
@@ -29,8 +29,8 @@ app.use(bodyParser.urlencoded({ extended: false }))
 // parse application/json
 app.use(bodyParser.json())
 
-//host on the port below
-app.listen(3000);
+//host on the port below - nginxport on aws 8081
+app.listen(8081);
 
 app.use(function (req, res, next) {
 
