@@ -1,14 +1,14 @@
-//const sql = require('mssql/msnodesqlv8')
 const sql = require("mssql")
 const express = require('express')
 const bodyParser = require('body-parser')
-
-//const connectionString = "server=.\\MSSQL2014;Database=LostIdentity;Trusted_Connection=Yes;Driver={SQL Server Native Client 11.0}";
+const cors = require('cors');
+const jwt = require('express-jwt');
+const jwks = require('jwks-rsa');
 
 // config for your database
 var config = {
-    user: 'user',
-    password: 'pass',
+    user: 'lostadmin',
+    password: 'lostpassword',
     server: 'lostmy-id.cgve6prjmy8d.ap-southeast-1.rds.amazonaws.com', //singapore aws rds
     database: 'LostIdentity' ,
     options: {
@@ -20,36 +20,32 @@ const app = express();
 
 //Connection pool
 const connection = new sql.ConnectionPool(config)
-
 // create Request object
 const dbRequest = new sql.Request(connection);
 
 // parse application/x-www-form-urlencoded
-app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.urlencoded({ extended: true }))
 // parse application/json
 app.use(bodyParser.json())
-
+//cors
+app.use(cors());
 //host on the port below - nginxport on aws 8081
 app.listen(8081);
 
-app.use(function (req, res, next) {
-
-    // Website you wish to allow to connect
-    res.setHeader('Access-Control-Allow-Origin', '*');
-
-    // Request methods you wish to allow
-    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS, PUT, PATCH, DELETE');
-
-    // Request headers you wish to allow
-    res.setHeader('Access-Control-Allow-Headers', 'X-Requested-With,content-type');
-
-    // Set to true if you need the website to include cookies in the requests sent
-    // to the API (e.g. in case you use sessions)
-    res.setHeader('Access-Control-Allow-Credentials', true);
-
-    // Pass to next layer of middleware
-    next();
-});
+// We are going to implement a JWT middleware that will ensure the validity of our token.
+// We'll require each protected route to have a valid access_token sent in the Authorization header
+const authCheck = jwt({
+    secret: jwks.expressJwtSecret({
+          cache: true,
+          rateLimit: true,
+          jwksRequestsPerMinute: 5,
+          jwksUri: "https://lost.auth0.com/.well-known/jwks.json"
+      }),
+      // This is the identifier we set when we created the API
+      audience: 'https://lost.auth0.com/api/v2/',
+      issuer: "lost.auth0.com", // e.g., lost.auth0.com
+      algorithms: ['RS256']
+  });
 
 //Get SUMMARY
 app.get('/summary', function(req, resp){
@@ -186,6 +182,44 @@ app.get('/searchDocuments/', function(req, resp){
                 resp.send("oops...!");
             } else {
                 resp.send(records.recordset);
+            }
+            connection.close();
+        });
+    });
+});
+
+//search documents count
+app.get('/searchDocumentsCount/', function(req, resp){
+    
+    const docNumber = req.query.docNumber;
+    const docTypeId = req.query.docType;
+    const givenName = req.query.givenName;
+    const country = req.query.country;
+
+    connection.connect(function(err) {
+        if (!!err){
+            console.log('Error in searching...' + err);
+        } else {
+            console.log('connected');
+        }
+
+        console.log(`${docTypeId}....${docNumber}....${givenName}.....${country}....`);
+
+        const searchQuery = `SELECT COUNT(*) as searchCount FROM [LostDocument] ld join DocumentType dt on dt.Id = ld.LostDocumentType_Id
+        WHERE ld.LostDocumentType_Id = ${docTypeId}
+        ${addFilterToSearch('DocumentNumber', docNumber, docTypeId != null)}
+        ${addFilterToSearch('GivenName', givenName, docTypeId != null && docNumber != null)}
+        ${addFilterToSearch('Country', country, docTypeId != null && docNumber != null && givenName != null)}`;
+    
+        console.log("returnIdQuery query..." + searchQuery);
+
+        dbRequest.query((searchQuery), function(err, records){
+            if (!!err){
+                console.log('Error in query' + err);
+                resp.send("oops...!");
+            } else {
+                console.log(records.recordset[0]);
+                resp.send(records.recordset[0]);
             }
             connection.close();
         });
