@@ -7,8 +7,8 @@ const jwks = require('jwks-rsa');
 
 // config for your database
 var config = {
-    user: 'lostadmin',
-    password: 'lostpassword',
+    user: 'user',
+    password: 'pass',
     server: 'lostmy-id.cgve6prjmy8d.ap-southeast-1.rds.amazonaws.com', //singapore aws rds
     database: 'LostIdentity' ,
     options: {
